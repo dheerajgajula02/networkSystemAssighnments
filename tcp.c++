@@ -42,16 +42,31 @@ int main()  {
     cout << "[+] Bind to port number " << port << endl;
     
     // listening to the socket 
+    // 5 is the backalog queue size 
     listen(sockfd, 5);
 
     cout << "[+] Listening ..." << endl;
 
     // accepting the socket connection 
-    newSocket = accept(sockfd, (struct sockaddr*)&newAddr, &addr_size);
+
+    newSocket = accept(sockfd, (struct sockaddr*)&newAddr, &addr_size); // this is your client socket 
+    while (true) {
 
     // sending the data to the buffer TCP server 
-    strcpy(buffer, "Hello");
-    send(newSocket, buffer, strlen(buffer), 0);
+    // strcpy(buffer, "Hello");
+    // send(newSocket, buffer, strlen(buffer), 0);
+
+    // recieving from the client 
+    int bytes_recieved = recv(newSocket, buffer, sizeof(buffer)-1, 0);
+
+    if (bytes_recieved > 0) {
+        // creating the endline for the buffer recieved 
+        buffer[bytes_recieved] = '\0';
+        cout << "Data recieved from client : " << buffer << endl;
+        continue;
+    }
+
+    }
 
     cout << "[+] closing the connection " << endl;
 

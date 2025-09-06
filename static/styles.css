@@ -1,0 +1,134 @@
+/* styles.css — self-displaying stylesheet (works without added HTML) */
+
+:root{
+  --bg:#0f1724;
+  --card:#0b1220;
+  --accent:#22c1c3;
+  --muted:#9aa4b2;
+  --radius:12px;
+  --glass: rgba(255,255,255,0.04);
+  --maxw:780px;
+}
+
+/* Make html/body fill viewport and show background */
+html,body{
+  height:100%;
+  margin:0;
+  padding:0;
+  font-family:Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+  background:
+    radial-gradient(600px 300px at 10% 20%, rgba(34,193,195,0.08), transparent 10%),
+    radial-gradient(500px 250px at 90% 80%, rgba(34,193,195,0.04), transparent 10%),
+    var(--bg);
+  color:#e6eef6;
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+  display:block;
+}
+
+/* Central viewport card created via body::before */
+body::before{
+  content: "";
+  position: fixed;
+  inset: 0;
+  display: block;
+  background: linear-gradient(180deg, rgba(255,255,255,0.02), transparent 30%);
+  pointer-events: none;
+  mix-blend-mode: overlay;
+}
+
+/* Main visible card (acts like our "page") */
+body::after{
+  content: "Simple Server UI\nLightweight · No HTML required";
+  white-space: pre-wrap;
+  position: fixed;
+  left:50%;
+  top:50%;
+  transform: translate(-50%,-50%);
+  width: min(92%, var(--maxw));
+  padding: 28px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+  border-radius: var(--radius);
+  box-shadow: 0 10px 40px rgba(2,6,23,0.6), 0 2px 6px rgba(0,0,0,0.45);
+  border: 1px solid rgba(255,255,255,0.03);
+  color: #eaf6f6;
+  font-size: 16px;
+  line-height: 1.45;
+  padding-bottom: 64px; /* space for footer line */
+  text-align: left;
+  display: block;
+  pointer-events: none;
+}
+
+/* Decorative "card" header line inserted with a pseudo element inside the after content box */
+@supports (position: fixed) {
+  body::after{
+    /* nothing additional here; supported so we continue */
+  }
+}
+
+/* Small subtitle using a pseudo-element on html to avoid touching body::after */
+html::before{
+  content: "Status: Running  •  Port: 8080";
+  position: fixed;
+  left:50%;
+  top: calc(50% + 86px);
+  transform: translateX(-50%);
+  font-size: 13px;
+  color: var(--muted);
+  background: linear-gradient(90deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+  padding: 8px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.03);
+  pointer-events: none;
+  box-shadow: 0 6px 18px rgba(2,6,23,0.5);
+}
+
+/* Decorative corner badges so the page looks alive */
+html::after{
+  content: "";
+  position: fixed;
+  top: 22px;
+  right: 22px;
+  width: 56px;
+  height: 56px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(34,193,195,0.18), rgba(34,129,193,0.12));
+  box-shadow: 0 8px 30px rgba(34,193,195,0.06);
+  pointer-events: none;
+  border: 1px solid rgba(255,255,255,0.02);
+}
+
+/* Small progress-like bar at bottom of the card */
+@media (min-width: 420px){
+  body::after{
+    padding-bottom: 72px;
+  }
+  body::before {
+    /* subtle moving stripes to imply activity */
+    background-image:
+      repeating-linear-gradient(45deg, rgba(255,255,255,0.01) 0 6px, transparent 6px 12px);
+    animation: stripe-move 6s linear infinite;
+    mix-blend-mode: overlay;
+  }
+}
+
+@keyframes stripe-move{
+  from{ background-position: 0 0; }
+  to{ background-position: 48px 48px; }
+}
+
+/* An animated "signal" bar using a fixed-position element styled from a pseudo-element on the body wrapper */
+body > * { /* ensures no real children are visible; keeps pointer-events none */
+  pointer-events: none;
+}
+
+/* Small accessibility: ensure text is selectable for copying if user highlights — allow selection on pseudo-elements via user-select on container */
+html, body { user-select: text; -webkit-user-select: text; }
+
+/* If a browser doesn't show pseudo-elements in certain contexts, provide a fallback visible focus ring by styling the scrollbar area */
+@supports not (pointer-events: none) {
+  body{
+    background: linear-gradient(180deg, #071224 0%, var(--bg) 100%);
+  }
+}
