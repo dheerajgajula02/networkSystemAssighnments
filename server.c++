@@ -19,6 +19,8 @@
 #include<sstream>
 
 #include<iostream>
+
+#include<sys/time.h>
 using namespace std;
 
 const string subdir = "www";
@@ -92,8 +94,13 @@ int main(int argc, char* argv[])  {
 
     cout << "Server socket created successfully" << endl;
 
+    int opt=1;
+    setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+
     // blocking the memory for address 
     memset(&serverAddr, '\0', sizeof(serverAddr));
+
+
 
     // defining the sender server address type 
     serverAddr.sin_family = AF_INET;
@@ -139,14 +146,27 @@ int main(int argc, char* argv[])  {
 
         close(sockfd);
 
-        char buffer[1024];
+        struct timeval tv;
+        tv.tv_sec = 10;
+        tv.tv_usec = 0;
+        setsockopt(newSocket, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv, sizeof tv);
 
-        int bytes_recieved = recv(newSocket, buffer, sizeof(buffer)-1, 0);
+        while (true){
 
-        if (bytes_recieved > 0) {
-        // creating the endline for the buffer recieved 
-        buffer[bytes_recieved] = '\0';
-        cout << "Data recieved from client : " << buffer << endl;
+            char buffer[4069] = {0};
+
+            int bytes_recieved = recv(newSocket, buffer, sizeof(buffer)-1, 0);
+
+            if (bytes_recieved > 0) {
+            // creating the endline for the buffer recieved 
+            buffer[bytes_recieved] = '\0';
+            cout << "Data recieved from client : " << buffer << endl;
+            
+            bool keep_alive_requested = false;
+
+            if (strstr(buffer, "Connection: Keep-alive") || strstr(buffer, "Connection: keep-alive")) {
+                    keep_alive_requested = true;
+                }
 
         char method[8], path[256], version[16];
         string status_code;
@@ -174,6 +194,7 @@ int main(int argc, char* argv[])  {
             string error_body = "505 HTTP Version Not Supported";
             string response = version_string + " 505 HTTP Version Not Supported \r\n";
             response += "Content-Length: " + to_string(error_body.size()) + "\r\n";
+            response += keep_alive_requested ? "Connection: Keep-alive\r\n" : "Connection: Close\r\n";
             response += "\r\n";
             response += error_body;
             send(newSocket, response.c_str(), response.size(), 0);
@@ -182,6 +203,7 @@ int main(int argc, char* argv[])  {
             string error_body = "405 Method Not Allowed";
             string response = version_string + " 405 Method Not Allowed \r\n";
             response += "Content-Length: " + to_string(error_body.size()) + "\r\n";
+            response += keep_alive_requested ? "Connection: Keep-alive\r\n" : "Connection: Close\r\n";
             response += "\r\n";
             response += error_body;
             send(newSocket, response.c_str(), response.size(), 0);
@@ -195,6 +217,7 @@ int main(int argc, char* argv[])  {
                 string error_body = "404 Not Found";
                 string response = "HTTP/1.1 404 Not Found\r\n";
                 response += "Content-Length: " + to_string(error_body.size()) + "\r\n";
+                response += keep_alive_requested ? "Connection: Keep-alive\r\n" : "Connection: Close\r\n";
                 response += "\r\n";
                 response += error_body;
                 send(newSocket, response.c_str(), response.size(), 0);
@@ -204,17 +227,20 @@ int main(int argc, char* argv[])  {
                 rewind(f);
 
                 vector<char> body(fsize);
-                fread(body.data(), 1, fsize, f);
+                char* file_buffer = new char[fsize];
+                fread(file_buffer, 1, fsize, f);
                 fclose(f);
 
                 string content_type = get_content_type(filepath);
                 string header = "HTTP/1.1 200 OK\r\n";
                 header += "Content-Type: " + content_type + "\r\n";
                 header += "Content-Length: " + to_string(fsize) + "\r\n";
+                header += keep_alive_requested ? "Connection: Keep-alive\r\n" : "Connection: Close\r\n";
                 header += "\r\n";
 
                 send(newSocket, header.c_str(), header.size(), 0);
-                send(newSocket, body.data(), body.size(), 0);
+                send(newSocket, file_buffer, body.size(), 0);
+                delete[] file_buffer;
             }
 
         } else { // normal files ( html / css/ js/ text )
@@ -232,14 +258,22 @@ int main(int argc, char* argv[])  {
         string response = "HTTP/1.1 "+ status_code + "\r\n";
         response += "Content-Type: " + get_content_type(filepath) +"\r\n";
         response += "Content-Length: " + to_string(body.size()) + "\r\n";
+        response += keep_alive_requested ? "Connection: Keep-alive\r\n" : "Connection: Close\r\n";
+
         response += "\r\n";
         response += body;
 
         send(newSocket, response.c_str(), response.size(), 0);
 
         }
-    }
 
+        if (!keep_alive_requested){
+            break;
+        }
+
+    }
+    }
+    cout << "[+] closing connections. " << endl;
     close(newSocket);
     exit(0);
     } else {

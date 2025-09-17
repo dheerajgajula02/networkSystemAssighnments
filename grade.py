@@ -162,22 +162,22 @@ def wait_for_server(proc, url, curl_timeout_s=2, ready_timeout_s=10):
         time.sleep(0.2)
     return False, "timeout"
 
-# def check_expect(req: bytes, want: int, label: str, alt_reqs: Optional[list] = None) -> bool:
-#     """Send req; if status==want -> pass. If alt_reqs provided, try them until one matches."""
+def check_expect(req: bytes, want: int, label: str, alt_reqs: Optional[list] = None) -> bool:
+    """Send req; if status==want -> pass. If alt_reqs provided, try them until one matches."""
     
     
-#     status, _ = send_raw_request(host, port, req, timeout=2.0)
-#     if status == want:
-#         print(f"[OK] {label}: got {status}")
-#         return True
-#     if alt_reqs:
-#         for r in alt_reqs:
-#             status2, _ = send_raw_request(host, port, r, timeout=2.0)
-#             if status2 == want:
-#                 print(f"[OK] {label} (alt): got {status2}")
-#                 return True
-#     print(f"[FAIL] {label}: got {status}")
-#     return False
+    status, _ = send_raw_request(host, port, req, timeout=2.0)
+    if status == want:
+        print(f"[OK] {label}: got {status}")
+        return True
+    if alt_reqs:
+        for r in alt_reqs:
+            status2, _ = send_raw_request(host, port, r, timeout=2.0)
+            if status2 == want:
+                print(f"[OK] {label} (alt): got {status2}")
+                return True
+    print(f"[FAIL] {label}: got {status}")
+    return False
         
 def server_running(proc) -> bool:
     return proc.poll() is None
