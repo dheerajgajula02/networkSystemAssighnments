@@ -11,16 +11,17 @@
 // for fork() function 
 #include<unistd.h>
 
+#include<cerrno>
 #include<vector>
 // to prevent zombie process 
 #include<signal.h>
+#include<typeinfo>
+#include<sstream>
 
 #include<iostream>
 using namespace std;
 
-#define port 8888
-
-const string subdir = "static";
+const string subdir = "www";
 
 #include <string>
 using std::string;
@@ -49,8 +50,24 @@ string get_content_type(const string& path) {
 }
 
 
-int main()  {
+int main(int argc, char* argv[])  {
     
+
+    if(argc < 2) {
+        cout << "Usage :" << argv[0] << "<port>" << endl;
+        return 1;
+    }
+
+    // reading port from the argument
+
+    char *endptr = nullptr;
+    long port_l = strtol(argv[1], &endptr, 10);
+    if (*endptr != '\0' || port_l <= 0 || port_l > 65535) {
+        cerr << "Invalid port: " << argv[1] << endl;
+        return 1;
+    }
+    uint16_t port = static_cast<uint16_t>(port_l);
+
     int sockfd;
     struct sockaddr_in serverAddr;
 
@@ -147,7 +164,29 @@ int main()  {
             cout << filepath << endl ;
 
         // handling binary files :) yes I wrote bad code, but for now lets just keep it this way 
+
+        cout << "version :" << version << " method :" << method << endl;
         
+        string version_string(version);
+        string method_string(method);
+
+        if(version_string!= "HTTP/1.1") {
+            string error_body = "505 HTTP Version Not Supported";
+            string response = version_string + " 505 HTTP Version Not Supported \r\n";
+            response += "Content-Length: " + to_string(error_body.size()) + "\r\n";
+            response += "\r\n";
+            response += error_body;
+            send(newSocket, response.c_str(), response.size(), 0);
+            //cout << "inside http check point" << endl;
+        } else if (method_string != "GET"){
+            string error_body = "405 Method Not Allowed";
+            string response = version_string + " 405 Method Not Allowed \r\n";
+            response += "Content-Length: " + to_string(error_body.size()) + "\r\n";
+            response += "\r\n";
+            response += error_body;
+            send(newSocket, response.c_str(), response.size(), 0);
+
+        }
         if (isBinaryFile(filepath)) {
             FILE* f = fopen(filepath.c_str(), "rb"); // binary mode :)
 

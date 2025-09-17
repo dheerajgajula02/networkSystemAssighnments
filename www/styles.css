@@ -60,12 +60,6 @@ body::after{
   pointer-events: none;
 }
 
-/* Decorative "card" header line inserted with a pseudo element inside the after content box */
-@supports (position: fixed) {
-  body::after{
-    /* nothing additional here; supported so we continue */
-  }
-}
 
 /* Small subtitle using a pseudo-element on html to avoid touching body::after */
 html::before{
