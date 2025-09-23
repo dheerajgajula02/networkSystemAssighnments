@@ -12,6 +12,8 @@ all: $(TARGET)
 
 $(TARGET): $(SRC)
 	$(CXX) $(CXXFLAGS) -o $@ $^
+	@echo "Building succeeded !!"
+	@echo " Running the programme"
 
 run: $(TARGET)
 	./$(TARGET)
